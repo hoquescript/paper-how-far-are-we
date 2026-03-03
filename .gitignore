@@ -1,0 +1,16 @@
+.venv/
+
+.vscode/
+
+data/
+temp/
+
+*.jsonl
+*.json
+*.csv
+*.txt
+*.md
+*.pdf
+*.docx
+
+.env
