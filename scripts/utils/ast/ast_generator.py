@@ -16,38 +16,25 @@ The generated AST sequences can be used as:
 import os
 import pandas as pd
 from glob import glob
-from tree_sitter import Language, Parser
 
 from scripts.utils.ast.language.python_ast import traverse_ast as F_python
 from scripts.utils.ast.language.java_ast import traverse_ast as F_java
 from scripts.utils.ast.language.cpp_ast import traverse_ast as F_cpp
+from scripts.utils.ast.tree_sitter_loader import get_parser_for_language
 
-
-# Initialize Tree-Sitter parsers for each language
-CPP_LANGUAGE = Language('build/my-languages.so', 'cpp')
-cpp_parser = Parser()
-cpp_parser.set_language(CPP_LANGUAGE)
-
-JAVA_LANGUAGE = Language('build/my-languages.so', 'java')
-java_parser = Parser()
-java_parser.set_language(JAVA_LANGUAGE)
-
-PY_LANGUAGE = Language('build/my-languages.so', 'python')
-python_parser = Parser()
-python_parser.set_language(PY_LANGUAGE)
 
 # Provider configuration mapping language to parser and AST traversal function
 providers = {
     "cpp": {
-        "parser": cpp_parser,
+        "parser": get_parser_for_language("cpp"),
         "generator": F_cpp,
     },
     "java": {
-        "parser": java_parser,
+        "parser": get_parser_for_language("java"),
         "generator": F_java,
     },
     "python": {
-        "parser": python_parser,
+        "parser": get_parser_for_language("python"),
         "generator": F_python,
     }
 }

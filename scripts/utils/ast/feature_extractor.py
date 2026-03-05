@@ -15,40 +15,11 @@ for training machine learning classifiers.
 import os
 import pandas as pd
 from glob import glob
-from tree_sitter import Language, Parser
 
-from scripts.ast.language.python_ast import get_node_text
-from scripts.ast.language.java_ast import analyze_java_code
-from scripts.ast.language.cpp_ast import analyze_cpp_code
-
-
-# Initialize Tree-Sitter parsers
-CPP_LANGUAGE = Language('build/my-languages.so', 'cpp')
-cpp_parser = Parser()
-cpp_parser.set_language(CPP_LANGUAGE)
-
-JAVA_LANGUAGE = Language('build/my-languages.so', 'java')
-java_parser = Parser()
-java_parser.set_language(JAVA_LANGUAGE)
-
-PY_LANGUAGE = Language('build/my-languages.so', 'python')
-python_parser = Parser()
-python_parser.set_language(PY_LANGUAGE)
-
-providers = {
-    "cpp": {
-        "parser": cpp_parser,
-        "analyzer": analyze_cpp_code
-    },
-    "java": {
-        "parser": java_parser,
-        "analyzer": analyze_java_code
-    },
-    "python": {
-        "parser": python_parser,
-        "analyzer": analyze_python_code  # Defined below
-    }
-}
+from scripts.utils.ast.language.python_ast import get_node_text
+from scripts.utils.ast.language.java_ast import analyze_java_code
+from scripts.utils.ast.language.cpp_ast import analyze_cpp_code
+from scripts.utils.ast.tree_sitter_loader import get_parser_for_language
 
 
 def analyze_python_code(tree, code):
@@ -105,6 +76,22 @@ def analyze_python_code(tree, code):
     operators_ratio = len(unique_operators) / total_tokens if total_tokens > 0 else 0
     
     return keywords_ratio, operators_ratio
+
+
+providers = {
+    "cpp": {
+        "parser": get_parser_for_language("cpp"),
+        "analyzer": analyze_cpp_code
+    },
+    "java": {
+        "parser": get_parser_for_language("java"),
+        "analyzer": analyze_java_code
+    },
+    "python": {
+        "parser": get_parser_for_language("python"),
+        "analyzer": analyze_python_code
+    }
+}
 
 
 def extract_features(code, lang):

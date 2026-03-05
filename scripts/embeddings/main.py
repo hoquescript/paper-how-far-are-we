@@ -43,6 +43,7 @@ if _PROJECT_ROOT not in sys.path:
 from scripts.utils.ast.language.python_ast import traverse_ast as _py_traverse  # noqa: E402
 from scripts.utils.ast.language.java_ast   import traverse_ast as _java_traverse  # noqa: E402
 from scripts.utils.ast.language.cpp_ast    import traverse_ast as _cpp_traverse  # noqa: E402
+from scripts.utils.ast.tree_sitter_loader import get_parser_for_language as _get_ts_parser  # noqa: E402
 
 _TRAVERSE = {
     "python": _py_traverse,
@@ -74,18 +75,14 @@ def get_parser_for_language(language: str):
         _PARSER_CACHE[language] = parser
         return parser
 
-    from tree_sitter import Language, Parser  # local fallback import
-
-    grammar_name = "cpp" if language == "cpp" else language
-    library_path = os.path.join(_PROJECT_ROOT, "build", "my-languages.so")
-    if not os.path.exists(library_path):
+    try:
+        parser = _get_ts_parser(language)
+    except RuntimeError as exc:
         raise RuntimeError(
-            "Parser backend unavailable. Install 'tree_sitter_languages' or provide "
-            f"'{library_path}'."
-        )
-    ts_language = Language(library_path, grammar_name)
-    parser = Parser()
-    parser.set_language(ts_language)
+            "Parser backend unavailable. Install 'tree_sitter_languages' or set "
+            "'TS_LANGUAGE_SO_PATH' to a valid shared library."
+        ) from exc
+
     _PARSER_CACHE[language] = parser
     return parser
 
