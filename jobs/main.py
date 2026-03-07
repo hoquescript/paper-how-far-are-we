@@ -40,12 +40,6 @@ def safe_str(x):
     return "" if x is None else str(x)
 
 
-# -----------------------------
-# 1) AST serialization (AST Only)
-#    This is a simple preorder traversal of node types.
-#    The paper references a specific serialization from [42],
-#    but this is a good starting point to reproduce the pipeline. [file:1]
-# -----------------------------
 def ast_preorder_types(code: str, language: str) -> str:
     normalized_language = "cpp" if language == "c" else language
     return generate_ast_sequence(code, normalized_language)
