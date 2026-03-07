@@ -10,7 +10,11 @@ from transformers import AutoTokenizer, AutoModel
 
 from tree_sitter_languages import get_parser
 
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.model_selection import (
+    StratifiedKFold,
+    train_test_split,
+    RandomizedSearchCV,
+)
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -134,55 +138,31 @@ def average_f1(y_true, y_pred) -> float:
     return (f1_h + f1_a) / 2.0
 
 
-def train_and_eval_classifier(
-    X_train, y_train, X_test, y_test, model_kind: str = "svm", seed: int = 42
-):
-    if model_kind == "svm":
-        pipe = Pipeline(
-            steps=[
-                ("scaler", StandardScaler()),
-                ("clf", SVC(probability=False)),
-            ]
-        )
-        param_dist = {
+def train_and_eval_classifier(X_train, y_train, X_test, y_test, seed: int = 42):
+    pipe = Pipeline(
+        steps=[
+            ("scaler", StandardScaler()),
+            ("clf", SVC(probability=False)),
+        ]
+    )
+    param_dist = [
+        {
+            "clf__kernel": ["linear"],
             "clf__C": loguniform(1e-3, 1e3),
-            "clf__kernel": ["rbf", "linear"],
+        },
+        {
+            "clf__kernel": ["rbf"],
+            "clf__C": loguniform(1e-3, 1e3),
             "clf__gamma": ["scale", "auto"],
-        }
-    elif model_kind == "logreg":
-        pipe = Pipeline(
-            steps=[
-                ("scaler", StandardScaler()),
-                ("clf", LogisticRegression(max_iter=5000)),
-            ]
-        )
-        param_dist = {
-            "clf__C": loguniform(1e-3, 1e3),
-            "clf__penalty": ["l2"],
-            "clf__solver": ["lbfgs"],
-        }
-    elif model_kind == "rf":
-        pipe = Pipeline(
-            steps=[
-                ("clf", RandomForestClassifier(random_state=seed)),
-            ]
-        )
-        param_dist = {
-            "clf__n_estimators": randint(100, 800),
-            "clf__max_depth": randint(2, 40),
-            "clf__min_samples_split": randint(2, 20),
-            "clf__min_samples_leaf": randint(1, 10),
-            "clf__max_features": ["sqrt", "log2", None],
-        }
-    else:
-        raise ValueError("model_kind must be one of: svm, logreg, rf")
+        },
+    ]
 
     search = RandomizedSearchCV(
         estimator=pipe,
         param_distributions=param_dist,
         n_iter=25,
         scoring="f1_macro",  # you can also optimize for custom Average-F1 with a scorer
-        cv=5,
+        cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=seed),
         random_state=seed,
         n_jobs=-1,
         verbose=1,
@@ -205,7 +185,7 @@ def train_and_eval_classifier(
 # -----------------------------
 # 5) End-to-end driver
 # -----------------------------
-def run_section3f(
+def main(
     df: pd.DataFrame,
     language_col: str = "language",
     code_col: str = "code",
@@ -243,7 +223,7 @@ def run_section3f(
     )
 
     best_model, report = train_and_eval_classifier(
-        X_train, y_train, X_test, y_test, model_kind=model_kind, seed=seed
+        X_train, y_train, X_test, y_test, seed=seed
     )
     return report
 
@@ -265,7 +245,7 @@ if __name__ == "__main__":
         print("\n==============================")
         print(f"Representation = {rep}")
         print("==============================")
-        report = run_section3f(df, representation=rep, model_kind="svm")
+        report = main(df, representation=rep, model_kind="svm")
         print("Best params:", report["best_params"])
         print("Accuracy:", report["accuracy"])
         print("Average-F1 (custom):", report["avg_f1_custom"])
