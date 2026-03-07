@@ -93,16 +93,20 @@ class CodeEmbedder:
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
     def __post_init__(self):
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_name, trust_remote_code=True
+        )
         self.separator_token = resolve_separator_token(self.tokenizer)
-        self.model = AutoModel.from_pretrained(self.model_name).to(self.device)
+        self.model = AutoModel.from_pretrained(
+            self.model_name, trust_remote_code=True
+        ).to(self.device)
         self.model.eval()
 
     @torch.no_grad()
     def embed_texts(self, texts: List[str], batch_size: int = 16) -> np.ndarray:
         """
-        Mean-pool last_hidden_state with attention mask.
-        Returns array shape (n, hidden_dim).
+        Extract normalized sequence embeddings from the CodeT5+ checkpoint.
+        Returns array shape (n, embed_dim).
         """
         all_vecs = []
 
@@ -116,16 +120,8 @@ class CodeEmbedder:
                 max_length=self.max_length,
             ).to(self.device)
 
-            out = self.model(**enc)
-            # out.last_hidden_state: (B, T, H)
-            last = out.last_hidden_state
-            mask = enc["attention_mask"].unsqueeze(-1)  # (B, T, 1)
-
-            summed = (last * mask).sum(dim=1)  # (B, H)
-            counts = mask.sum(dim=1).clamp(min=1)  # (B, 1)
-            mean_pooled = summed / counts
-
-            all_vecs.append(mean_pooled.detach().cpu().numpy())
+            embeddings = self.model(**enc)
+            all_vecs.append(embeddings.detach().cpu().numpy())
 
         return np.vstack(all_vecs)
 
