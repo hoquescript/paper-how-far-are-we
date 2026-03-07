@@ -18,7 +18,12 @@ from sklearn.model_selection import (
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-from sklearn.metrics import classification_report, f1_score, accuracy_score, confusion_matrix
+from sklearn.metrics import (
+    classification_report,
+    f1_score,
+    accuracy_score,
+    confusion_matrix,
+)
 from scipy.stats import loguniform
 
 
@@ -64,13 +69,17 @@ def ast_preorder_types(code: str, language: str) -> str:
 # -----------------------------
 # 2) Representations
 # -----------------------------
-SEP_TOKEN = "<CODESPLIT_ASTSEP>"  # "special separator token" idea [file:1]
+DEFAULT_SEP_TOKEN = "</s>"
 
 
-def make_representations(code: str, language: str) -> Dict[str, str]:
+def resolve_separator_token(tokenizer) -> str:
+    return tokenizer.sep_token or tokenizer.eos_token or DEFAULT_SEP_TOKEN
+
+
+def make_representations(code: str, language: str, sep_token: str) -> Dict[str, str]:
     code_only = code
     ast_only = ast_preorder_types(code, language)
-    combined = code_only + "\n" + SEP_TOKEN + "\n" + ast_only
+    combined = code_only + "\n" + sep_token + "\n" + ast_only
     return {"code": code_only, "ast": ast_only, "combined": combined}
 
 
@@ -85,6 +94,7 @@ class CodeEmbedder:
 
     def __post_init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.separator_token = resolve_separator_token(self.tokenizer)
         self.model = AutoModel.from_pretrained(self.model_name).to(self.device)
         self.model.eval()
 
@@ -223,6 +233,7 @@ def main(
     """
     set_seed(seed)
 
+    embedder = CodeEmbedder()
     texts = []
     labels = []
 
@@ -231,11 +242,10 @@ def main(
         code = safe_str(row[code_col])
         y = int(row[label_col])
 
-        reps = make_representations(code, lang)
+        reps = make_representations(code, lang, embedder.separator_token)
         texts.append(reps[representation])
         labels.append(y)
 
-    embedder = CodeEmbedder()
     X = embedder.embed_texts(texts, batch_size=16)
     y = np.array(labels)
 
