@@ -1,6 +1,5 @@
 #!/bin/bash
 #SBATCH --job-name=ast_svm
-#SBATCH --partition=gpubase_bygpu_b5
 #SBATCH --array=0-1
 #SBATCH --time=00:20:00
 #SBATCH --cpus-per-task=4
@@ -9,7 +8,7 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 
 module load python scipy-stack
 VENV=$HOME/venvs/how-far-are-we
