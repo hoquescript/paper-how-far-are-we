@@ -4,6 +4,7 @@ import pandas as pd
 
 from dataclasses import dataclass
 from typing import List, Dict
+from pathlib import Path
 
 import torch
 from transformers import AutoTokenizer, AutoModel
@@ -241,27 +242,53 @@ def main(
     return report
 
 
+def format_report(rep: str, report: Dict[str, object]) -> str:
+    lines = [
+        "",
+        "==============================",
+        f"Representation = {rep}",
+        "==============================",
+        f"Best params: {report['best_params']}",
+        f"Accuracy: {report['accuracy']}",
+        f"TPR: {report['tpr']}",
+        f"TNR: {report['tnr']}",
+        f"Average-F1 (custom): {report['avg_f1_custom']}",
+        str(report["classification_report"]),
+    ]
+    return "\n".join(lines)
+
+
+def log_message(message: str, log_path: Path):
+    print(message)
+    with log_path.open("a", encoding="utf-8") as log_file:
+        log_file.write(message + "\n")
+
+
+def resolve_input_paths() -> List[Path]:
+    data_csv = os.environ.get("DATA_CSV")
+    if data_csv:
+        return [Path(data_csv)]
+    return [Path("data/python.csv"), Path("data/java.csv")]
+
+
 if __name__ == "__main__":
-    # Example input format:
-    # data.csv columns: language, code, label
-    # label: 1=Human, 0=AI
-    path = os.environ.get("DATA_CSV", "data.csv")
-    if not os.path.exists(path):
+    input_paths = resolve_input_paths()
+    missing_paths = [str(path) for path in input_paths if not path.exists()]
+    if missing_paths:
         raise SystemExit(
-            "Create a data.csv with columns: language, code, label (1=Human, 0=AI). "
-            "Then run: DATA_CSV=data.csv python section3f_codet5_embeddings.py"
+            "Missing input CSV file(s): "
+            + ", ".join(missing_paths)
+            + ". Expected columns: language, code, label."
         )
 
-    df = pd.read_csv(path)
+    log_path = Path(os.environ.get("LOG_FILE", "logs/local_run.log"))
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text("", encoding="utf-8")
 
-    for rep in ["code", "ast", "combined"]:
-        print("\n==============================")
-        print(f"Representation = {rep}")
-        print("==============================")
-        report = main(df, representation=rep, model_kind="svm")
-        print("Best params:", report["best_params"])
-        print("Accuracy:", report["accuracy"])
-        print("TPR:", report["tpr"])
-        print("TNR:", report["tnr"])
-        print("Average-F1 (custom):", report["avg_f1_custom"])
-        print(report["classification_report"])
+    for path in input_paths:
+        df = pd.read_csv(path)
+        log_message(f"\nDataset: {path}", log_path)
+
+        for rep in ["code", "ast", "combined"]:
+            report = main(df, representation=rep, model_kind="svm")
+            log_message(format_report(rep, report), log_path)
