@@ -8,27 +8,36 @@
 
 set -euo pipefail
 
-ROOT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
-
-module load python scipy-stack
-VENV=$HOME/venvs/how-far-are-we
-
-source ~/venvs/how-far-are-we/bin/activate
-
-export HF_HOME=$HOME/.cache/huggingface
-export TRANSFORMERS_CACHE=$HF_HOME/transformers
+ROOT_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
 
 mkdir -p "$ROOT_DIR/logs"
 cd "$ROOT_DIR"
 
-$VENV/bin/python -c "import torch; print(torch.__version__)"
+module load python/3.14
 
-# Pick dataset based on array index
+virtualenv --clear "$SLURM_TMPDIR/ENV"
+source "$SLURM_TMPDIR/ENV/bin/activate"
+
+pip install --no-index --upgrade pip
+pip install --no-index --no-cache \
+    tree-sitter==0.25.2 \
+    tree-sitter-cpp~=0.23.0 \
+    tree-sitter-python~=0.25.0 \
+    tree_sitter-java~=0.23.0 \
+    numpy pandas torch transformers scikit-learn scipy sentencepiece
+
+python -c "import tree_sitter, tree_sitter_cpp, tree_sitter_python, tree_sitter_java"
+python -c "import torch; print(torch.__version__)"
+
+export HF_HOME="$SCRATCH/hf_cache"
+export TRANSFORMERS_CACHE="$HF_HOME/transformers"
+mkdir -p "$HF_HOME" "$TRANSFORMERS_CACHE"
+
 if [ -z "${DATA_CSV:-}" ]; then
   if [ "${SLURM_ARRAY_TASK_ID:-0}" -eq 0 ]; then
-    export DATA_CSV=data/java.csv
+    export DATA_CSV="$ROOT_DIR/data/java.csv"
   else
-    export DATA_CSV=data/python.csv
+    export DATA_CSV="$ROOT_DIR/data/python.csv"
   fi
 fi
 
@@ -43,4 +52,4 @@ else
   echo "Running Python job with $DATA_CSV"
 fi
 
-$VENV/bin/python -m jobs.main
+python -m jobs.main
