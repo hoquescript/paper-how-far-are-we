@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import numpy as np
 import pandas as pd
@@ -147,6 +148,10 @@ def compute_paper_metrics(y_true, y_pred) -> Dict[str, float]:
 def train_and_eval_classifier(
     X_train, y_train, X_val, y_val, X_test, y_test, seed: int = 42
 ):
+    print(
+        "Classifier: Training and evaluating starts at: ",
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    )
     pipe = Pipeline(
         steps=[
             ("scaler", StandardScaler()),
@@ -196,6 +201,10 @@ def train_and_eval_classifier(
         "f1_macro": f1_score(y_test, y_pred, average="macro"),
         "classification_report": classification_report(y_test, y_pred, digits=4),
     }
+    print(
+        "Classifier: Training and evaluating ends at: ",
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    )
     return best, report
 
 
@@ -313,6 +322,8 @@ if __name__ == "__main__":
     for rep in ["code", "ast", "combined"]:
         print("\n==============================")
         print(f"Representation = {rep}")
+        start_time = datetime.now()
+        print("Time to start: ", start_time.strftime("%Y-%m-%d %H:%M:%S"))
         print("==============================")
         report = main(df, representation=rep, model_kind="svm")
         print("Best params:", report["best_params"])
@@ -321,3 +332,8 @@ if __name__ == "__main__":
         print("TNR:", report["tnr"])
         print("Average-F1 (custom):", report["avg_f1_custom"])
         print(report["classification_report"])
+        print("--------------------------------")
+        end_time = datetime.now()
+        print("Time to end: ", end_time.strftime("%Y-%m-%d %H:%M:%S"))
+        print("Time taken: ", end_time - start_time)
+        print("--------------------------------")
