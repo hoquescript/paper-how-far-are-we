@@ -199,6 +199,46 @@ def train_and_eval_classifier(
     return best, report
 
 
+def train_and_eval_svm_only(
+    X_train,
+    y_train,
+    X_val,
+    y_val,
+    X_test,
+    y_test,
+    kernel: str = "rbf",
+    C: float = 1.0,
+    gamma: str = "scale",
+):
+    pipe = Pipeline(
+        steps=[
+            ("scaler", StandardScaler()),
+            ("clf", SVC(kernel=kernel, C=C, gamma=gamma, probability=False)),
+        ]
+    )
+
+    X_fit = np.vstack([X_train, X_val])
+    y_fit = np.concatenate([y_train, y_val])
+    pipe.fit(X_fit, y_fit)
+
+    y_pred = pipe.predict(X_test)
+    metrics = compute_paper_metrics(y_test, y_pred)
+    report = {
+        "best_params": {
+            "clf__kernel": kernel,
+            "clf__C": C,
+            "clf__gamma": gamma,
+        },
+        "accuracy": metrics["accuracy"],
+        "tpr": metrics["tpr"],
+        "tnr": metrics["tnr"],
+        "avg_f1_custom": metrics["avg_f1_custom"],
+        "f1_macro": f1_score(y_test, y_pred, average="macro"),
+        "classification_report": classification_report(y_test, y_pred, digits=4),
+    }
+    return pipe, report
+
+
 # -----------------------------
 # 5) End-to-end driver
 # -----------------------------
@@ -248,8 +288,11 @@ def main(
         stratify=y_train_val,
     )
 
-    best_model, report = train_and_eval_classifier(
-        X_train, y_train, X_val, y_val, X_test, y_test, seed=seed
+    # best_model, report = train_and_eval_classifier(
+    #     X_train, y_train, X_val, y_val, X_test, y_test, seed=seed
+    # )
+    best_model, report = train_and_eval_svm_only(
+        X_train, y_train, X_val, y_val, X_test, y_test
     )
     return report
 

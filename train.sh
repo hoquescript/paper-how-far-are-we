@@ -2,7 +2,7 @@
 #SBATCH --job-name=ast_svm
 #SBATCH --partition=gpubase_bygpu_b5
 #SBATCH --array=0-1
-#SBATCH --time=23:00:00
+#SBATCH --time=48:00:00
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=64G
@@ -31,8 +31,10 @@ export HF_HOME="$SCRATCH/hf_cache"
 export TRANSFORMERS_CACHE="$HF_HOME/transformers"
 mkdir -p "$HF_HOME" "$TRANSFORMERS_CACHE"
 
+export EMBED_BATCH_SIZE=128
+
 python -c "import tree_sitter, tree_sitter_cpp, tree_sitter_python, tree_sitter_java"
-python -c "import torch; print(torch.__version__)"
+python -c "import torch; print(f'torch={torch.__version__} cuda_available={torch.cuda.is_available()} device_count={torch.cuda.device_count()}')"
 
 if [ -z "${DATA_CSV:-}" ]; then
   if [ "${SLURM_ARRAY_TASK_ID:-0}" -eq 0 ]; then
