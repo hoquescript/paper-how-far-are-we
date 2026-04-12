@@ -38,9 +38,9 @@ python -c "import torch; print(f'torch={torch.__version__} cuda_available={torch
 
 if [ -z "${DATA_CSV:-}" ]; then
   if [ "${SLURM_ARRAY_TASK_ID:-0}" -eq 0 ]; then
-    export DATA_CSV="$ROOT_DIR/data/java.csv"
+    export DATA_CSV="$ROOT_DIR/data/aidev/java.csv"
   else
-    export DATA_CSV="$ROOT_DIR/data/python.csv"
+    export DATA_CSV="$ROOT_DIR/data/aidev/python.csv"
   fi
 fi
 

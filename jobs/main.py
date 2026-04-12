@@ -281,9 +281,7 @@ def main(
         texts.append(reps[representation])
         labels.append(y)
 
-    default_batch_size = 16 if embedder.device == "cuda" else 4
-    batch_size = int(os.environ.get("EMBED_BATCH_SIZE", str(default_batch_size)))
-    X = embedder.embed_texts(texts, batch_size=batch_size)
+    X = embedder.embed_texts(texts, batch_size=128)
     y = np.array(labels)
 
     X_train_val, X_test, y_train_val, y_test = train_test_split(
@@ -297,12 +295,12 @@ def main(
         stratify=y_train_val,
     )
 
-    best_model, report = train_and_eval_classifier(
-        X_train, y_train, X_val, y_val, X_test, y_test, seed=seed
-    )
-    # best_model, report = train_and_eval_svm_only(
-    #     X_train, y_train, X_val, y_val, X_test, y_test
+    # best_model, report = train_and_eval_classifier(
+    #     X_train, y_train, X_val, y_val, X_test, y_test, seed=seed
     # )
+    best_model, report = train_and_eval_svm_only(
+        X_train, y_train, X_val, y_val, X_test, y_test
+    )
     return report
 
 
@@ -310,12 +308,9 @@ if __name__ == "__main__":
     # Example input format:
     # data.csv columns: language, code, label
     # label: 1=Human, 0=AI
-    path = os.environ.get("DATA_CSV", "data.csv")
+    path = os.environ.get("DATA_CSV")
     if not os.path.exists(path):
-        raise SystemExit(
-            "Create a data.csv with columns: language, code, label (1=Human, 0=AI). "
-            "Then run: DATA_CSV=data.csv python section3f_codet5_embeddings.py"
-        )
+        raise SystemExit("Create a data.csv with columns: language, code, label (1=Human, 0=AI). Set the path in the DATA_CSV env variable.")
 
     df = pd.read_csv(path)
 
