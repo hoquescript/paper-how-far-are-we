@@ -2,10 +2,10 @@
 #SBATCH --job-name=ast_svm
 #SBATCH --partition=gpubase_bygpu_b5
 #SBATCH --array=0-1
-#SBATCH --time=48:00:00
+#SBATCH --time=24:00:00
 #SBATCH --gpus-per-node=1
-#SBATCH --cpus-per-task=48
-#SBATCH --mem=64G
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=32G
 #SBATCH --output=logs/%x-%A_%a.out
 
 set -euo pipefail
