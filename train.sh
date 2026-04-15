@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=ast_svm
 #SBATCH --partition=gpubase_bygpu_b5
-#SBATCH --array=0-1
+#SBATCH --array=0-2
 #SBATCH --time=24:00:00
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=32
@@ -25,6 +25,7 @@ pip install --no-index --no-cache \
   tree-sitter-cpp~=0.23.0 \
   tree-sitter-python~=0.25.0 \
   tree_sitter-java~=0.23.0 \
+  tree-sitter-typescript~=0.23.0 \
   numpy pandas torch "transformers==4.57.6" scikit-learn scipy sentencepiece
 
 export HF_HOME="$SCRATCH/hf_cache"
@@ -33,14 +34,16 @@ mkdir -p "$HF_HOME" "$TRANSFORMERS_CACHE"
 
 export EMBED_BATCH_SIZE=128
 
-python -c "import tree_sitter, tree_sitter_cpp, tree_sitter_python, tree_sitter_java"
+python -c "import tree_sitter, tree_sitter_cpp, tree_sitter_python, tree_sitter_java, tree_sitter_typescript"
 python -c "import torch; print(f'torch={torch.__version__} cuda_available={torch.cuda.is_available()} device_count={torch.cuda.device_count()}')"
 
 if [ -z "${DATA_CSV:-}" ]; then
   if [ "${SLURM_ARRAY_TASK_ID:-0}" -eq 0 ]; then
     export DATA_CSV="$ROOT_DIR/data/aidev/java.csv"
-  else
+  elif [ "${SLURM_ARRAY_TASK_ID:-0}" -eq 1 ]; then
     export DATA_CSV="$ROOT_DIR/data/aidev/python.csv"
+  else
+    export DATA_CSV="$ROOT_DIR/data/aidev/typescript.csv"
   fi
 fi
 
@@ -51,8 +54,10 @@ fi
 
 if [ "${SLURM_ARRAY_TASK_ID:-0}" -eq 0 ]; then
   echo "Running Java job with $DATA_CSV"
-else
+elif [ "${SLURM_ARRAY_TASK_ID:-0}" -eq 1 ]; then
   echo "Running Python job with $DATA_CSV"
+else
+  echo "Running TypeScript job with $DATA_CSV"
 fi
 
 python -m jobs.main

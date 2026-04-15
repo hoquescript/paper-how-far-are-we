@@ -21,21 +21,24 @@ from tree_sitter import Language, Parser
 import tree_sitter_python as tspython
 import tree_sitter_java as tsjava
 import tree_sitter_cpp as tscpp
+import tree_sitter_typescript as tsts 
 
 from scripts.utils.ast.language.python_ast import traverse_ast as F_python
 from scripts.utils.ast.language.java_ast import traverse_ast as F_java
 from scripts.utils.ast.language.cpp_ast import traverse_ast as F_cpp
 from scripts.utils.ast.tree_sitter_loader import get_parser_for_language
-
+from scripts.utils.ast.language.typescript_ast import traverse_ast as F_typescript
 
 PYTHON_LANGUAGE = Language(tspython.language())
 JAVA_LANGUAGE = Language(tsjava.language())
 CPP_LANGUAGE = Language(tscpp.language())
+TSX_LANGUAGE = Language(tsts.language_tsx())
 
 providers = {
     "cpp": {"parser": Parser(CPP_LANGUAGE), "generator": F_cpp},
     "java": {"parser": Parser(JAVA_LANGUAGE), "generator": F_java},
     "python": {"parser": Parser(PYTHON_LANGUAGE), "generator": F_python},
+    "typescript": {"parser": Parser(TSX_LANGUAGE), "generator": F_typescript},
 }
 
 
