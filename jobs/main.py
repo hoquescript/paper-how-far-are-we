@@ -285,12 +285,12 @@ def main(
     y = np.array(labels)
 
     X_train_val, X_test, y_train_val, y_test = train_test_split(
-        X, y, test_size=0.10, random_state=seed, stratify=y
+        X, y, test_size=0.20, random_state=seed, stratify=y
     )
     X_train, X_val, y_train, y_val = train_test_split(
         X_train_val,
         y_train_val,
-        test_size=1 / 9,
+        test_size=0.125,
         random_state=seed,
         stratify=y_train_val,
     )
