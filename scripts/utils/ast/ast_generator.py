@@ -1,18 +1,3 @@
-"""
-AST Generator Module
-
-This module provides the main interface for generating AST sequence representations
-from source code using Tree-Sitter parsers.
-
-Used in:
-- Section III-D: LLM-based approaches (zero-shot, in-context, fine-tuning)
-- Section III-F: Machine learning with code embeddings
-
-The generated AST sequences can be used as:
-1. "AST Only" input for LLM prompting or embedding generation
-2. Part of "Combined" (Code + AST) representation
-"""
-
 import os
 import pandas as pd
 from glob import glob
@@ -22,23 +7,29 @@ import tree_sitter_python as tspython
 import tree_sitter_java as tsjava
 import tree_sitter_cpp as tscpp
 import tree_sitter_typescript as tsts 
+import tree_sitter_javascript as tsjs
 
 from scripts.utils.ast.language.python_ast import traverse_ast as F_python
 from scripts.utils.ast.language.java_ast import traverse_ast as F_java
 from scripts.utils.ast.language.cpp_ast import traverse_ast as F_cpp
 from scripts.utils.ast.tree_sitter_loader import get_parser_for_language
 from scripts.utils.ast.language.typescript_ast import traverse_ast as F_typescript
+from scripts.utils.ast.language.javascript_ast import traverse_ast as F_javascript
+
 
 PYTHON_LANGUAGE = Language(tspython.language())
 JAVA_LANGUAGE = Language(tsjava.language())
 CPP_LANGUAGE = Language(tscpp.language())
 TSX_LANGUAGE = Language(tsts.language_tsx())
+JS_LANGUAGE = Language(tsjs.language())
+
 
 providers = {
     "cpp": {"parser": Parser(CPP_LANGUAGE), "generator": F_cpp},
     "java": {"parser": Parser(JAVA_LANGUAGE), "generator": F_java},
     "python": {"parser": Parser(PYTHON_LANGUAGE), "generator": F_python},
     "typescript": {"parser": Parser(TSX_LANGUAGE), "generator": F_typescript},
+    "javascript": {"parser": Parser(JS_LANGUAGE), "generator": F_javascript},
 }
 
 
