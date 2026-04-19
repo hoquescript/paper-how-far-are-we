@@ -60,7 +60,7 @@ class CodeEmbedder:
                 max_length=self.max_length,
             ).to(self.device)
 
-            embeddings = self.model(**enc)
+            embeddings = self.model(**enc, return_dict=True)
             all_vecs.append(embeddings.detach().cpu().numpy())
 
         return np.vstack(all_vecs)
