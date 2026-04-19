@@ -17,9 +17,10 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-from scripts.utils.ast.ast_generator import generate_ast_sequence
-from .utils.helper import set_seed, safe_str, save_snapshot
-from .utils.embedder import CodeEmbedder
+from utils.ast.ast_generator import generate_ast_sequence
+from utils.snapshot import save_snapshot
+from .partials.helper import set_seed, safe_str
+from .partials.embedder import CodeEmbedder
 
 
 def get_report(y_true, y_pred, y_score=None):

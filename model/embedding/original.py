@@ -23,7 +23,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-from scripts.utils.ast.ast_generator import generate_ast_sequence
+from utils.ast.ast_generator import generate_ast_sequence
 
 
 def set_seed(seed: int = 42):
