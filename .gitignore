@@ -8,3 +8,11 @@ logs/
 
 
 .env
+
+__pycache__/
+**/__pycache__/
+**/__pycache__/**
+*.py[cod]
+**/*.py[cod]
+**/*.pyc
+*$py.class
