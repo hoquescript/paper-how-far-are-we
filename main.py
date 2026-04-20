@@ -1,11 +1,11 @@
 import pandas as pd
 import os
-from model.embedding import kfold_embedding_model
+from model.embedding import bagging_embedding_model
 
 
 def main(path: str):
     df = pd.read_csv(path)
-    report = kfold_embedding_model(df, ["code", "ast", "combined"])
+    report = bagging_embedding_model(df, ["code", "ast", "combined"])
     print(report)
 
 
