@@ -142,7 +142,7 @@ def train_and_eval_svm_only(
 
 
 def build_entities(df: pd.DataFrame, rep: str, sep: str) -> list[str]:
-    code = df["code"].apply(safe_str).str.lower()
+    code = df["code"].apply(safe_str)
     xml = df["xml"].apply(safe_str)
     ast = df["ast"]
 
@@ -166,7 +166,7 @@ def main(
 
     df = df.copy()
     df["ast"] = [
-        generate_ast_sequence(safe_str(row.code).lower(), safe_str(row.language))
+        generate_ast_sequence(safe_str(row.code), safe_str(row.language))
         for row in df.itertuples(index=False)
     ]
 
