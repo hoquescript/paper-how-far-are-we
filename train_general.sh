@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=embedding
+#SBATCH --job-name=srcml-general
 #SBATCH --partition=gpubase_bygpu_b5
 #SBATCH --gpus=h100:1
-#SBATCH --time=24:00:00
+#SBATCH --time=8:00:00
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=32G
 #SBATCH --output=/dev/null
@@ -34,18 +34,11 @@ source "$SLURM_TMPDIR/ENV/bin/activate"
 # Install dependencies
 pip install --no-index --upgrade pip
 pip install --no-index --no-cache \
-  tree-sitter~=0.25.2 \
-  tree-sitter-cpp~=0.23.0 \
-  tree-sitter-python~=0.25.0 \
-  tree_sitter-java~=0.23.0 \
-  tree-sitter-typescript~=0.23.2 \
-  tree-sitter-javascript~=0.25.0 \
   numpy pandas torch transformers scikit-learn joblib
-
 
 # Assign the data CSV file if the environment variable is not set
 if [ -z "${DATA_CSV:-}" ]; then
-  export DATA_CSV="$ROOT_DIR/data/hmcorp_xml.csv"
+  export DATA_CSV="$ROOT_DIR/data/hmcorp_srcml.csv"
 fi
 
 # Check if the data CSV file exists in that file path
@@ -54,13 +47,13 @@ if [ ! -f "$DATA_CSV" ]; then
   exit 1
 fi
 
-echo "Running Java (HMCorp XML) job with $DATA_CSV"
+echo "Running Java (HMCorp SRCML General) job with $DATA_CSV"
 
 # Pass --sample <N> to do a quick run on a subset; omit for full training
-# SAMPLE=200 sbatch train.sh
+# SAMPLE=200 sbatch train_general.sh
 SAMPLE_ARG=""
 if [ -n "${SAMPLE:-}" ]; then
   SAMPLE_ARG="--sample $SAMPLE"
 fi
 
-python main.py $SAMPLE_ARG
+python -m model.metrics.srcml.general $SAMPLE_ARG

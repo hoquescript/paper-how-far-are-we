@@ -23,9 +23,6 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-from utils.ast.ast_generator import generate_ast_sequence
-
-
 def set_seed(seed: int = 42):
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -165,6 +162,8 @@ def main(
     embedder = CodeEmbedder()
 
     df = df.copy()
+    from utils.ast.ast_generator import generate_ast_sequence
+
     df["ast"] = [
         generate_ast_sequence(safe_str(row.code), safe_str(row.language))
         for row in df.itertuples(index=False)
