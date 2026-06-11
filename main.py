@@ -9,7 +9,7 @@ def main(path: str, sample: int | None = None):
     if sample is not None:
         df = df.sample(n=sample, random_state=42)
     print(f"Dataset size: {len(df)} rows")
-    reports = run_embedding(df, ["code", "code_xml", "code_ast_xml"])
+    reports = run_embedding(df, ["code_xml", "code_ast_xml"])
     for rep, report in reports.items():
         print(f"\n=== {rep} ===")
         print(report)

@@ -175,7 +175,7 @@ def main(
     for rep in representations:
         entities = build_entities(df, rep, embedder.separator_token)
 
-        X = embedder.embed_texts(entities, batch_size=128)
+        X = embedder.embed_texts(entities, batch_size=64)
         y = df["label"]
 
         X_train_val, X_test, y_train_val, y_test = train_test_split(

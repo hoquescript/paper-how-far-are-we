@@ -12,6 +12,7 @@ set -euo pipefail
 # Setup environment variables
 export HF_HOME="$SCRATCH/hf_cache"
 export TRANSFORMERS_CACHE="$HF_HOME/transformers"
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 mkdir -p "$HF_HOME" "$TRANSFORMERS_CACHE"
 
 # Get root directory
