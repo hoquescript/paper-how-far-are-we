@@ -55,4 +55,10 @@ fi
 
 echo "Running Java (HMCorp XML) job with $DATA_CSV"
 
-python main.py
+# Pass --sample <N> to do a quick run on a subset; omit for full training
+SAMPLE_ARG=""
+if [ -n "${SAMPLE:-}" ]; then
+  SAMPLE_ARG="--sample $SAMPLE"
+fi
+
+python main.py $SAMPLE_ARG
