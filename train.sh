@@ -2,7 +2,7 @@
 #SBATCH --job-name=embedding
 #SBATCH --partition=gpubase_bygpu_b5
 #SBATCH --gpus=h100:1
-#SBATCH --time=10:00:00
+#SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=32G
 #SBATCH --output=/dev/null
@@ -42,20 +42,9 @@ pip install --no-index --no-cache \
   numpy pandas torch transformers scikit-learn joblib
 
 
-TASK_ID="${SLURM_ARRAY_TASK_ID:-0}"
-
-declare -a LANGUAGE_NAMES=("Javascript")
-declare -a DATASETS=("javascript.csv")
-
-# Exclude tasks that are not supported
-if [ "$TASK_ID" -lt 0 ] || [ "$TASK_ID" -ge "${#DATASETS[@]}" ]; then
-  echo "Unsupported SLURM_ARRAY_TASK_ID=$TASK_ID. Expected 0-$(( ${#DATASETS[@]} - 1 ))" >&2
-  exit 1
-fi
-
 # Assign the data CSV file if the environment variable is not set
 if [ -z "${DATA_CSV:-}" ]; then
-  export DATA_CSV="$ROOT_DIR/data/aidev/${DATASETS[$TASK_ID]}"
+  export DATA_CSV="$ROOT_DIR/data/hmcorp_xml.csv"
 fi
 
 # Check if the data CSV file exists in that file path
@@ -64,6 +53,6 @@ if [ ! -f "$DATA_CSV" ]; then
   exit 1
 fi
 
-echo "Running ${LANGUAGE_NAMES[$TASK_ID]} job with $DATA_CSV"
+echo "Running Java (HMCorp XML) job with $DATA_CSV"
 
 python main.py

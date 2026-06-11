@@ -141,15 +141,30 @@ def train_and_eval_svm_only(
     return get_report(y_test, y_pred, y_score)
 
 
+def build_entities(df: pd.DataFrame, rep: str, sep: str) -> list[str]:
+    code = df["code"].apply(safe_str).str.lower()
+    xml = df["xml"].apply(safe_str)
+    ast = df["ast"]
+
+    if rep == "code":
+        return code.to_list()
+    elif rep == "code_xml":
+        return (code + "\n" + sep + "\n" + xml).to_list()
+    elif rep == "code_ast_xml":
+        return (code + "\n" + sep + "\n" + ast + "\n" + sep + "\n" + xml).to_list()
+    else:
+        raise ValueError(f"Unknown representation: {rep!r}")
+
+
 def main(
     df: pd.DataFrame,
-    representations: list[str] = ["code"],
+    representations: list[str] = ["code", "code_xml", "code_ast_xml"],
     seed: int = 42,
 ):
     set_seed(seed)
     embedder = CodeEmbedder()
 
-    # Parsing AST
+    df = df.copy()
     df["ast"] = [
         generate_ast_sequence(safe_str(row.code).lower(), safe_str(row.language))
         for row in df.itertuples(index=False)
@@ -158,11 +173,7 @@ def main(
     reports = {}
 
     for rep in representations:
-        entities = (
-            df["code"].str.lower() + "\n" + embedder.separator_token + "\n" + df["ast"]
-            if rep == "combined"
-            else df[rep]
-        ).to_list()
+        entities = build_entities(df, rep, embedder.separator_token)
 
         X = embedder.embed_texts(entities, batch_size=128)
         y = df["label"]

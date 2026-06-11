@@ -1,14 +1,17 @@
 import pandas as pd
 import os
-from model.embedding import kfold_embedding_model
+from model.metrics.srcml.embedding import main as run_embedding
 
 
 def main(path: str):
-    df = pd.read_csv(path)
-    report = kfold_embedding_model(df, ["code", "ast", "combined"])
-    print(report)
+    df = pd.read_csv(path).sample(n=100)
+    reports = run_embedding(df, ["code", "code_xml", "code_ast_xml"])
+    for rep, report in reports.items():
+        print(f"\n=== {rep} ===")
+        print(report)
 
 
 if __name__ == "__main__":
-    path = os.getenv("DATA_CSV", "data/sample/python.csv")
+    print("Training embedding model: SRCML")
+    path = os.getenv("DATA_CSV", "data/output.csv")
     main(path=path)
