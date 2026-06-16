@@ -23,6 +23,37 @@ def log(msg: str):
     print(f"[{ts()}] {msg}", flush=True)
 
 
+REPS = ["code", "ast", "xml"]
+REP_DIM = 256  # embedding dim per representation
+
+
+def representation_importance(pipe, X_test: np.ndarray, y_test: np.ndarray, seed: int = 42) -> dict:
+    """
+    Permutation importance at the representation level.
+    For each 256-dim block (code / ast / xml), shuffle those columns across
+    samples and measure the drop in accuracy vs the baseline.
+    A larger drop means that representation carries more signal.
+    """
+    rng = np.random.default_rng(seed)
+    baseline_acc = accuracy_score(y_test, pipe.predict(X_test))
+
+    importances = {}
+    for i, rep in enumerate(REPS):
+        start, end = i * REP_DIM, (i + 1) * REP_DIM
+        X_permuted = X_test.copy()
+        # Shuffle the block row-wise (each column independently)
+        for col in range(start, end):
+            X_permuted[:, col] = rng.permutation(X_permuted[:, col])
+        permuted_acc = accuracy_score(y_test, pipe.predict(X_permuted))
+        importances[rep] = round(baseline_acc - permuted_acc, 6)
+
+    total = sum(abs(v) for v in importances.values()) or 1.0
+    importances["_contribution_%"] = {
+        rep: round(abs(v) / total * 100, 2) for rep, v in importances.items() if not rep.startswith("_")
+    }
+    return importances
+
+
 def get_report(y_true, y_pred, y_score=None):
     f1_h = f1_score(y_true, y_pred, pos_label=1)
     f1_a = f1_score(y_true, y_pred, pos_label=0)
@@ -157,6 +188,14 @@ def main(df: pd.DataFrame, output_dir: str = "embeddings", seed: int = 42):
     log("=== Results ===")
     for k, v in report.items():
         print(f"  {k}: {v}")
+
+    log("=== Representation Importance (permutation) ===")
+    imp = representation_importance(pipe, X_test, y_test, seed=seed)
+    contrib = imp.pop("_contribution_%")
+    for rep in REPS:
+        drop = imp[rep]
+        pct = contrib[rep]
+        print(f"  {rep:<6}  accuracy drop={drop:+.4f}  contribution={pct:.1f}%")
 
     log("Done.")
     return report
