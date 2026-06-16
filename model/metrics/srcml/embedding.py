@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import List
 
 import torch
@@ -22,6 +23,10 @@ from sklearn.metrics import (
     f1_score,
     roc_auc_score,
 )
+
+def ts() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 
 def set_seed(seed: int = 42):
     np.random.seed(seed)
@@ -75,14 +80,14 @@ class CodeEmbedder:
         n_batches = (len(texts) + batch_size - 1) // batch_size
 
         print(
-            f"Embedding {len(texts)} samples on {self.device} "
+            f"[{ts()}] Embedding {len(texts)} samples on {self.device} "
             f"in {n_batches} batches (batch_size={batch_size})",
             flush=True,
         )
 
         for i in range(0, len(texts), batch_size):
             print(
-                f"Embedding batch {i // batch_size + 1}/{n_batches}",
+                f"[{ts()}] Embedding batch {i // batch_size + 1}/{n_batches}",
                 flush=True,
             )
             batch = texts[i : i + batch_size]
