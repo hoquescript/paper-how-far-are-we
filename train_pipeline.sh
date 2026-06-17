@@ -2,9 +2,9 @@
 #SBATCH --job-name=srcml-pipeline
 #SBATCH --partition=gpubase_bygpu_b5
 #SBATCH --gpus=h100:1
-#SBATCH --time=16:00:00
-#SBATCH --cpus-per-task=32
-#SBATCH --mem=64G
+#SBATCH --time=24:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
 #SBATCH --output=/dev/null
 
 set -euo pipefail
@@ -55,8 +55,7 @@ fi
 
 echo "Running Java (HMCorp Pipeline) job with $DATA_CSV"
 
-# Embedding CSVs will be saved here
-OUTPUT_DIR="$ROOT_DIR/embeddings/$DATE"
+OUTPUT_DIR="$ROOT_DIR/embeddings"
 
 # Pass --sample <N> to do a quick run on a subset; omit for full training
 # SAMPLE=200 sbatch train_pipeline.sh

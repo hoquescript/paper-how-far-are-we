@@ -112,11 +112,14 @@ def main(df: pd.DataFrame, output_dir: str = "embeddings", seed: int = 42):
         df_train = pd.read_csv(train_path)
         df_test = pd.read_csv(test_path)
     else:
-        df_train, df_test = train_test_split(
-            df, test_size=0.20, random_state=seed, stratify=df["label"]
+        # Split by problem ID so both the human and AI rows of the same
+        # problem always land in the same split — prevents data leakage
+        unique_ids = df["id"].unique()
+        train_ids, test_ids = train_test_split(
+            unique_ids, test_size=0.20, random_state=seed
         )
-        df_train = df_train.reset_index(drop=True)
-        df_test = df_test.reset_index(drop=True)
+        df_train = df[df["id"].isin(train_ids)].reset_index(drop=True)
+        df_test = df[df["id"].isin(test_ids)].reset_index(drop=True)
         df_train.to_csv(train_path, index=False)
         df_test.to_csv(test_path, index=False)
         log(f"Saved train ({len(df_train)} rows) → {train_path}")
