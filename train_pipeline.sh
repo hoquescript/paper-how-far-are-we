@@ -2,7 +2,7 @@
 #SBATCH --job-name=srcml-pipeline
 #SBATCH --partition=gpubase_bygpu_b5
 #SBATCH --gpus=h100:1
-#SBATCH --time=24:00:00
+#SBATCH --time=12:00:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --output=/dev/null
@@ -18,6 +18,9 @@ mkdir -p "$HF_HOME" "$TRANSFORMERS_CACHE"
 # Get root directory
 ROOT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 cd "$ROOT_DIR"
+
+# Archive previous logs
+mv -f "$ROOT_DIR/logs"/* "$ROOT_DIR/logs_history/" 2>/dev/null || true
 
 # Setup logging
 DATE=$(date +%Y-%m-%d_%H-%M-%S)

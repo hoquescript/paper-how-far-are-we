@@ -27,33 +27,6 @@ REPS = ["code", "ast", "xml"]
 REP_DIM = 256  # embedding dim per representation
 
 
-def representation_importance(pipe, X_test: np.ndarray, y_test: np.ndarray, seed: int = 42) -> dict:
-    """
-    Permutation importance at the representation level.
-    For each 256-dim block (code / ast / xml), shuffle those columns across
-    samples and measure the drop in accuracy vs the baseline.
-    A larger drop means that representation carries more signal.
-    """
-    rng = np.random.default_rng(seed)
-    baseline_acc = accuracy_score(y_test, pipe.predict(X_test))
-
-    importances = {}
-    for i, rep in enumerate(REPS):
-        start, end = i * REP_DIM, (i + 1) * REP_DIM
-        X_permuted = X_test.copy()
-        # Shuffle the block row-wise (each column independently)
-        for col in range(start, end):
-            X_permuted[:, col] = rng.permutation(X_permuted[:, col])
-        permuted_acc = accuracy_score(y_test, pipe.predict(X_permuted))
-        importances[rep] = round(baseline_acc - permuted_acc, 6)
-
-    total = sum(abs(v) for v in importances.values()) or 1.0
-    importances["_contribution_%"] = {
-        rep: round(abs(v) / total * 100, 2) for rep, v in importances.items() if not rep.startswith("_")
-    }
-    return importances
-
-
 def get_report(y_true, y_pred, y_score=None):
     f1_h = f1_score(y_true, y_pred, pos_label=1)
     f1_a = f1_score(y_true, y_pred, pos_label=0)
@@ -68,7 +41,22 @@ def get_report(y_true, y_pred, y_score=None):
     }
 
 
-def load_or_embed(embedder, texts: list, path: str, name: str) -> np.ndarray:
+def block_permutation_importance(
+    pipe, X_test: np.ndarray, y_test: np.ndarray, reps: list, rng: np.random.Generator
+) -> dict:
+    """Measure accuracy drop when each representation block is shuffled."""
+    baseline = accuracy_score(y_test, pipe.predict(X_test))
+    importance = {}
+    for i, rep in enumerate(reps):
+        start, end = i * REP_DIM, (i + 1) * REP_DIM
+        X_perturbed = X_test.copy()
+        X_perturbed[:, start:end] = rng.permutation(X_perturbed[:, start:end])
+        drop = baseline - accuracy_score(y_test, pipe.predict(X_perturbed))
+        importance[rep] = round(float(drop), 4)
+    return importance
+
+
+def get_embeddings(embedder, texts: list, path: str, name: str) -> np.ndarray:
     """Load embeddings from disk if they exist, otherwise embed and save."""
     if os.path.exists(path):
         log(f"Loading cached {name} embeddings from {path} ...")
@@ -96,7 +84,7 @@ def needs_embedding(output_dir: str) -> bool:
 def main(df: pd.DataFrame, output_dir: str = "embeddings", seed: int = 42):
     set_seed(seed)
     split_dir = os.path.join(output_dir, "split")
-    emb_dir = os.path.join(output_dir, "embeddings")
+    emb_dir = os.path.join(output_dir, "emb")
     os.makedirs(split_dir, exist_ok=True)
     os.makedirs(emb_dir, exist_ok=True)
 
@@ -161,47 +149,51 @@ def main(df: pd.DataFrame, output_dir: str = "embeddings", seed: int = 42):
         }
         for rep, texts in texts_map.items():
             path = os.path.join(emb_dir, f"{split_name}_{rep}.csv")
-            vecs[split_name][rep] = load_or_embed(embedder, texts, path, f"{split_name}/{rep}")
+            vecs[split_name][rep] = get_embeddings(
+                embedder, texts, path, f"{split_name}/{rep}"
+            )
 
-    # ── Step 4: Merge embeddings ──────────────────────────────────────────
-    log("=== Step 4/5: Merging Embeddings ===")
-    X_train = np.concatenate(
-        [vecs["train"]["code"], vecs["train"]["ast"], vecs["train"]["xml"]], axis=1
-    )
-    X_test = np.concatenate(
-        [vecs["test"]["code"], vecs["test"]["ast"], vecs["test"]["xml"]], axis=1
-    )
     y_train = df_train["label"].values
     y_test = df_test["label"].values
-    log(f"Train matrix: {X_train.shape} | Test matrix: {X_test.shape}")
 
-    # ── Step 5: Train SVM ─────────────────────────────────────────────────
-    log("=== Step 5/5: Training SVM ===")
-    pipe = Pipeline([
-        ("scaler", StandardScaler()),
-        ("clf", SVC(kernel="rbf", C=1.0, gamma="scale", probability=False)),
-    ])
-    pipe.fit(X_train, y_train)
-    log("SVM training complete")
+    COMBOS = {
+        "code+xml": ["code", "xml"],
+        "code+ast+xml": ["code", "ast", "xml"],
+    }
 
-    y_pred = pipe.predict(X_test)
-    y_score = pipe.decision_function(X_test)
-    report = get_report(y_test, y_pred, y_score)
+    rng = np.random.default_rng(seed)
+    reports = {}
+    for combo_name, reps in COMBOS.items():
+        # ── Step 4: Merge embeddings ──────────────────────────────────────
+        log(f"=== Step 4/5: Merging Embeddings [{combo_name}] ===")
+        X_train = np.concatenate([vecs["train"][r] for r in reps], axis=1)
+        X_test = np.concatenate([vecs["test"][r] for r in reps], axis=1)
+        log(f"Train matrix: {X_train.shape} | Test matrix: {X_test.shape}")
 
-    log("=== Results ===")
-    for k, v in report.items():
-        print(f"  {k}: {v}")
+        # ── Step 5: Train SVM ─────────────────────────────────────────────
+        log(f"=== Step 5/5: Training SVM [{combo_name}] ===")
+        pipe = Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                ("clf", SVC(kernel="rbf", C=1.0, gamma="scale", probability=False)),
+            ]
+        )
+        pipe.fit(X_train, y_train)
+        log("SVM training complete")
 
-    log("=== Representation Importance (permutation) ===")
-    imp = representation_importance(pipe, X_test, y_test, seed=seed)
-    contrib = imp.pop("_contribution_%")
-    for rep in REPS:
-        drop = imp[rep]
-        pct = contrib[rep]
-        print(f"  {rep:<6}  accuracy drop={drop:+.4f}  contribution={pct:.1f}%")
+        y_pred = pipe.predict(X_test)
+        y_score = pipe.decision_function(X_test)
+        report = get_report(y_test, y_pred, y_score)
 
-    log("Done.")
-    return report
+        importance = block_permutation_importance(pipe, X_test, y_test, reps, rng)
+        report["feature_importance"] = importance
+        reports[combo_name] = report
+
+        log(f"=== Results [{combo_name}] ===")
+        for k, v in report.items():
+            print(f"  {k}: {v}")
+
+    return reports
 
 
 if __name__ == "__main__":

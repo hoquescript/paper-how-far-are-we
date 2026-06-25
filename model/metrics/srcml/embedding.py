@@ -24,6 +24,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
+
 def ts() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -86,10 +87,12 @@ class CodeEmbedder:
         )
 
         for i in range(0, len(texts), batch_size):
-            print(
-                f"[{ts()}] Embedding batch {i // batch_size + 1}/{n_batches}",
-                flush=True,
-            )
+            # Print progress every 100 batches
+            if i % 100 == 0:
+                print(
+                    f"[{ts()}] Embedding batch {i // batch_size + 1}/{n_batches}",
+                    flush=True,
+                )
             batch = texts[i : i + batch_size]
             enc = self.tokenizer(
                 batch,
