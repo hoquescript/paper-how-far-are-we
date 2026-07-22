@@ -16,7 +16,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 mkdir -p "$HF_HOME" "$TRANSFORMERS_CACHE"
 
 # Get root directory
-ROOT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+ROOT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
 cd "$ROOT_DIR"
 
 # Archive previous logs
@@ -67,6 +67,6 @@ if [ -n "${SAMPLE:-}" ]; then
   SAMPLE_ARG="--sample $SAMPLE"
 fi
 
-python -m model.metrics.srcml.pipeline \
+python -m model.metrics.srcml.xml.train \
   --output-dir "$OUTPUT_DIR" \
   $SAMPLE_ARG

@@ -16,7 +16,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-from .embedding import CodeEmbedder, safe_str, set_seed, ts
+from embedding import CodeEmbedder, safe_str, set_seed, ts
 
 
 def log(msg: str):
@@ -157,7 +157,7 @@ def main(df: pd.DataFrame, output_dir: str = "embeddings", seed: int = 42):
     y_test = df_test["label"].values
 
     COMBOS = {
-        "code+xml": ["code", "xml"],
+        # "code+xml": ["code", "xml"],
         "code+ast+xml": ["code", "ast", "xml"],
     }
 

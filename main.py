@@ -1,7 +1,7 @@
 import argparse
 import pandas as pd
 import os
-from model.metrics.srcml.embedding import main as run_embedding
+from model.metrics.srcml.pipeline import main as run_pipeline
 
 
 def main(path: str, sample: int | None = None):
@@ -9,10 +9,11 @@ def main(path: str, sample: int | None = None):
     if sample is not None:
         df = df.sample(n=sample, random_state=42)
     print(f"Dataset size: {len(df)} rows")
-    reports = run_embedding(df, ["code_xml", "code_ast_xml"])
-    for rep, report in reports.items():
-        print(f"\n=== {rep} ===")
-        print(report)
+    reports = run_pipeline(df)
+    for combo, report in reports.items():
+        print(f"\n=== {combo} ===")
+        for k, v in report.items():
+            print(f"  {k}: {v}")
 
 
 if __name__ == "__main__":

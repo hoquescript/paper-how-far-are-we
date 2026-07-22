@@ -16,8 +16,11 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 mkdir -p "$HF_HOME" "$TRANSFORMERS_CACHE"
 
 # Get root directory
-ROOT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+ROOT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
 cd "$ROOT_DIR"
+
+# Archive previous logs
+mv -f "$ROOT_DIR/logs"/* "$ROOT_DIR/logs_history/" 2>/dev/null || true
 
 # Setup logging
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
@@ -38,7 +41,7 @@ pip install --no-index --no-cache \
 
 # Assign the data CSV file if the environment variable is not set
 if [ -z "${DATA_CSV:-}" ]; then
-  export DATA_CSV="$ROOT_DIR/data/hmcorp_srcml.csv"
+  export DATA_CSV="$ROOT_DIR/data/hmcorp_xml_2.csv"
 fi
 
 # Check if the data CSV file exists in that file path
@@ -56,4 +59,6 @@ if [ -n "${SAMPLE:-}" ]; then
   SAMPLE_ARG="--sample $SAMPLE"
 fi
 
-python -m model.metrics.srcml.general $SAMPLE_ARG
+python -m model.metrics.srcml.graph.train \
+  --input "$DATA_CSV" \
+  $SAMPLE_ARG
