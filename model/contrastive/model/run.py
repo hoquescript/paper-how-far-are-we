@@ -106,11 +106,18 @@ def normalize_source_text(text):
 
 def infer_language_from_file_path(file_path):
     normalized_path = str(file_path).lower().replace("\\", "/")
-    if "/python/" in normalized_path or "python" in os.path.basename(normalized_path):
+    basename = os.path.basename(normalized_path)
+    # javascript and typescript are checked first: "javascript" contains "java",
+    # so the java branch would otherwise claim them.
+    if "/javascript/" in normalized_path or "javascript" in basename:
+        return "javascript"
+    if "/typescript/" in normalized_path or "typescript" in basename:
+        return "typescript"
+    if "/python/" in normalized_path or "python" in basename:
         return "python"
-    if "/java/" in normalized_path or "java" in os.path.basename(normalized_path):
+    if "/java/" in normalized_path or "java" in basename:
         return "java"
-    if "/cpp/" in normalized_path or "cpp" in os.path.basename(normalized_path):
+    if "/cpp/" in normalized_path or "cpp" in basename:
         return "cpp"
     raise ValueError("Unable to infer language from data path: {}".format(file_path))
 

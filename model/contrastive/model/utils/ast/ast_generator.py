@@ -22,10 +22,14 @@ from tree_sitter import Language, Parser
 import tree_sitter_python as tspython
 import tree_sitter_java as tsjava
 import tree_sitter_cpp as tscpp
+import tree_sitter_typescript as tsts
+import tree_sitter_javascript as tsjs
 
 from utils.ast.language.python_ast import traverse_ast as F_python
 from utils.ast.language.java_ast import traverse_ast as F_java
 from utils.ast.language.cpp_ast import traverse_ast as F_cpp
+from utils.ast.language.typescript_ast import traverse_ast as F_typescript
+from utils.ast.language.javascript_ast import traverse_ast as F_javascript
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +37,8 @@ logger = logging.getLogger(__name__)
 PYTHON_LANGUAGE = Language(tspython.language())
 JAVA_LANGUAGE = Language(tsjava.language())
 CPP_LANGUAGE = Language(tscpp.language())
+TSX_LANGUAGE = Language(tsts.language_tsx())
+JS_LANGUAGE = Language(tsjs.language())
 
 
 def _build_parser(language):
@@ -44,6 +50,8 @@ providers = {
     "cpp": {"parser": _build_parser(CPP_LANGUAGE), "generator": F_cpp},
     "java": {"parser": _build_parser(JAVA_LANGUAGE), "generator": F_java},
     "python": {"parser": _build_parser(PYTHON_LANGUAGE), "generator": F_python},
+    "typescript": {"parser": _build_parser(TSX_LANGUAGE), "generator": F_typescript},
+    "javascript": {"parser": _build_parser(JS_LANGUAGE), "generator": F_javascript},
 }
 
 
